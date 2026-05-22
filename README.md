@@ -66,7 +66,21 @@ myScreenEntry { vm, navArgs -> MyScreen(vm, navArgs) } // vm + the nav key, if y
 
 ## Setup
 
-TBD
+```kotlin
+// build.gradle.kts (consumer module)
+plugins {
+    id("com.google.devtools.ksp")  // already present if you use Hilt with KSP
+}
+
+dependencies {
+    implementation("com.stavfx:nav3-hilt-vm:0.1.0")
+    ksp("com.stavfx:nav3-hilt-vm:0.1.0")
+}
+```
+
+`implementation` exposes the `@HiltNavKeyViewModel` / `@NavArg` annotations; `ksp` runs the processor at build time. Same artifact for both.
+
+The library assumes your consumer module already has the standard Hilt + Navigation 3 + Compose stack — it just generates the glue between them.
 
 ## Requirements
 
