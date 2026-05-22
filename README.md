@@ -1,8 +1,8 @@
 # nav3-hilt-vm
 
-KSP processor that takes the boilerplate out of Hilt + Navigation 3 ViewModels with assisted NavKey injection.
+KSP processor that wires Hilt ViewModels into Navigation 3 entries with two annotations and one line per screen.
 
-The [official Hilt + Navigation 3 + assisted-injection recipe][recipe] requires four moving parts per screen: a `@HiltViewModel(assistedFactory = …)` annotation, an `@AssistedInject` constructor, a nested `@AssistedFactory` interface, and a verbose `hiltViewModel<VM, Factory>(creationCallback = …)` block in your entry provider. This library reduces all of that to a single `@HiltNavKeyViewModel` annotation on a plain VM class.
+The [official Hilt + Navigation 3 + assisted-injection recipe][recipe] requires four moving parts per screen: a `@HiltViewModel(assistedFactory = …)` annotation, an `@AssistedInject` constructor, a nested `@AssistedFactory` interface, and a verbose `hiltViewModel<VM, Factory>(creationCallback = …)` block in your entry provider. This library replaces all of that with `@HiltNavKeyViewModel` on a plain VM class plus `@NavArg` on the route parameter.
 
 ## Before
 
@@ -37,13 +37,13 @@ NavDisplay(
 
 ## After
 
-Apply `@HiltNavKeyViewModel` to a plain `open` class, drop the rest:
+Apply `@HiltNavKeyViewModel` to a plain `open` class, mark the route param with `@NavArg`, drop the rest:
 
 ```kotlin
 @HiltNavKeyViewModel
 open class MyScreenViewModel(
     private val store: MyStore,
-    @Assisted private val navArgs: MyScreenNavArgs,
+    @NavArg private val navArgs: MyScreenNavArgs,
 ) : ViewModel()
 ```
 
@@ -51,10 +51,17 @@ open class MyScreenViewModel(
 NavDisplay(
     backStack = backStack,
     entryProvider = entryProvider {
-        myScreenEntry { MyScreen(it) }
+        myScreenEntry { vm -> MyScreen(vm) }
         // …one line like this per screen
     },
 )
+```
+
+Two overloads are generated per screen — pick whichever you need:
+
+```kotlin
+myScreenEntry { vm -> MyScreen(vm) }                  // vm only
+myScreenEntry { vm, navArgs -> MyScreen(vm, navArgs) } // vm + the nav key, if you need it
 ```
 
 ## Setup
@@ -67,7 +74,7 @@ The annotated class must:
 
 1. Be declared `open` (or `abstract`) — the processor generates a subclass that extends it.
 2. Have a single primary constructor.
-3. Have exactly one parameter annotated `@Assisted` whose type implements `androidx.navigation3.runtime.NavKey`.
+3. Have exactly one parameter annotated `@NavArg` whose type implements `androidx.navigation3.runtime.NavKey`. (`@NavArg` is our own marker — Dagger's `@Assisted` would error out on a plain class. Codegen transcribes `@NavArg` into a real `@Assisted` on the generated subclass.)
 
 All other constructor parameters are treated as Hilt-injected dependencies. Parameter annotations (`@ApplicationContext`, `@Named`, custom qualifiers) pass through to the generated subclass so Hilt resolves them correctly.
 
@@ -75,8 +82,8 @@ All other constructor parameters are treated as Hilt-injected dependencies. Para
 
 For an annotated `MyScreenViewModel`, the processor emits a sibling file `MyScreenViewModel_Nav.kt` containing:
 
-- **`MyScreenViewModelHilt`** — a subclass annotated `@HiltViewModel(assistedFactory = MyScreenViewModelHilt.Factory::class)` with an `@AssistedInject` constructor that mirrors yours and forwards via `super(...)`. The nested `@AssistedFactory interface Factory` lives here.
-- **`myScreenEntry`** — an `EntryProviderScope<NavKey>` extension that resolves the subclass through `hiltViewModel<…>(creationCallback = …)` and hands the result to your `content` lambda **as the base type** (`MyScreenViewModel`). Call sites stay agnostic of the generated subclass.
+- **`MyScreenViewModelHilt`** — a subclass annotated `@HiltViewModel(assistedFactory = …)` with an `@AssistedInject` constructor that mirrors yours and forwards via `super(...)`. The nested `Factory` interface lives here. (Hilt's `@AssistedInject` and `@Assisted` only appear in this generated file — you never write them yourself.)
+- **`myScreenEntry`** — two `EntryProviderScope<NavKey>` overloads (one with `content: (vm) -> Unit`, one with `content: (vm, navKey) -> Unit`). Both resolve the subclass through `hiltViewModel` and hand it to your content lambda as the **base type** (`MyScreenViewModel`). Call sites stay agnostic of the generated subclass.
 
 ## Compatibility
 

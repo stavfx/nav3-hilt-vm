@@ -81,8 +81,17 @@ class FactoryGenerator(
         val subCtorParams = primaryCtor.parameters.map { param ->
             val pName = param.name?.asString() ?: error("Constructor parameter missing name in $vmName")
             val pType = param.type.toTypeName()
+            val isNavKey = param == navKeyParam
             ParameterSpec.builder(pName, pType).apply {
+                if (isNavKey) {
+                    // The user's @NavArg marker doesn't exist in Dagger's world. Emit Dagger's
+                    // real @Assisted on the generated subclass so its @AssistedInject ctor is
+                    // well-formed for Hilt's processor.
+                    addAnnotation(AssistedAnnotation)
+                }
                 param.annotations.forEach { ann ->
+                    // Drop our own @NavArg — it's a source-side marker only.
+                    if (ann.shortName.asString() == "NavArg") return@forEach
                     addAnnotation(ann.toAnnotationSpec())
                 }
             }.build()
@@ -120,31 +129,47 @@ class FactoryGenerator(
             .addType(factoryInterface)
             .build()
 
-        val composableContent = LambdaTypeName.get(
-            parameters = arrayOf(ParameterSpec.unnamed(vmTypeName)),
-            returnType = UNIT,
-        ).copy(
-            annotations = listOf(AnnotationSpec.builder(ComposableAnnotation).build()),
-        )
-
-        val entryFn = FunSpec.builder(entryName)
-            .receiver(EntryProviderScope.parameterizedBy(NavKey))
-            .addParameter(
-                ParameterSpec.builder("extraMetadata", MAP.parameterizedBy(STRING, ANY))
-                    .defaultValue("emptyMap()")
-                    .build()
+        val composableLambda = { params: Array<ParameterSpec> ->
+            LambdaTypeName.get(parameters = params, returnType = UNIT).copy(
+                annotations = listOf(AnnotationSpec.builder(ComposableAnnotation).build()),
             )
-            .addParameter(ParameterSpec.builder("content", composableContent).build())
+        }
+        val contentWithKey = composableLambda(
+            arrayOf(ParameterSpec.unnamed(vmTypeName), ParameterSpec.unnamed(keyTypeName))
+        )
+        val contentVmOnly = composableLambda(
+            arrayOf(ParameterSpec.unnamed(vmTypeName))
+        )
+        val extraMetadataParam = ParameterSpec.builder("extraMetadata", MAP.parameterizedBy(STRING, ANY))
+            .defaultValue("emptyMap()")
+            .build()
+
+        // Full overload: content receives (vm, navKey). This is the canonical one — does the
+        // actual hiltViewModel<…>(creationCallback) work.
+        val entryFnFull = FunSpec.builder(entryName)
+            .receiver(EntryProviderScope.parameterizedBy(NavKey))
+            .addParameter(extraMetadataParam)
+            .addParameter(ParameterSpec.builder("content", contentWithKey).build())
             // `entry` is a member of EntryProviderScope (this fn's receiver), so just call it.
             .addStatement(
                 "entry<%T>(metadata = { extraMetadata }) { %L ->",
                 keyTypeName, keyParamName,
             )
             .addStatement(
-                "    content(%M<%T, %T>(creationCallback = { it.create(%L) }))",
-                HiltViewModelMember, hiltSubTypeName, factoryTypeName, keyParamName,
+                "    content(%M<%T, %T>(creationCallback = { it.create(%L) }), %L)",
+                HiltViewModelMember, hiltSubTypeName, factoryTypeName, keyParamName, keyParamName,
             )
             .addStatement("}")
+            .build()
+
+        // VM-only overload: content receives just (vm). Delegates to the (vm, key) overload via
+        // a 2-arg lambda so the resolver picks the canonical one. Useful when the screen doesn't
+        // need direct access to the nav key.
+        val entryFnVmOnly = FunSpec.builder(entryName)
+            .receiver(EntryProviderScope.parameterizedBy(NavKey))
+            .addParameter(extraMetadataParam)
+            .addParameter(ParameterSpec.builder("content", contentVmOnly).build())
+            .addStatement("$entryName(extraMetadata) { vm, _ -> content(vm) }")
             .build()
 
         val containingFile = vmClass.containingFile ?: run {
@@ -154,7 +179,8 @@ class FactoryGenerator(
 
         FileSpec.builder(packageName, "${vmName}_Nav")
             .addType(hiltSubclass)
-            .addFunction(entryFn)
+            .addFunction(entryFnFull)
+            .addFunction(entryFnVmOnly)
             .build()
             .writeTo(
                 codeGenerator,
@@ -163,6 +189,7 @@ class FactoryGenerator(
     }
 
     private companion object {
+        val AssistedAnnotation = ClassName("dagger.assisted", "Assisted")
         val AssistedFactoryAnnotation = ClassName("dagger.assisted", "AssistedFactory")
         val AssistedInjectAnnotation = ClassName("dagger.assisted", "AssistedInject")
         val HiltViewModelAnnotation =

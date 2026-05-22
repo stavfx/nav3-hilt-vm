@@ -48,7 +48,7 @@ class HiltNavViewModelProcessorTest {
             package com.example
 
             import androidx.navigation3.runtime.NavKey
-            import dagger.assisted.Assisted
+            import com.stavfx.nav3hiltvm.annotations.NavArg
             import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
 
             data class MyScreenNavArgs(val id: String) : NavKey
@@ -58,7 +58,7 @@ class HiltNavViewModelProcessorTest {
             @HiltNavKeyViewModel
             open class MyScreenViewModel(
                 private val store: MyStore,
-                @Assisted private val navArgs: MyScreenNavArgs,
+                @NavArg private val navArgs: MyScreenNavArgs,
             )
             """.trimIndent()
         )
@@ -87,10 +87,15 @@ class HiltNavViewModelProcessorTest {
         // The entry helper exposes the BASE type to the content lambda, but resolves the SUBCLASS
         // through hiltViewModel.
         assertContains(generated, "EntryProviderScope<NavKey>.myScreenEntry")
-        assertContains(generated, "content: @Composable (MyScreenViewModel) -> Unit")
+        // Full overload — content receives (vm, navKey).
+        assertContains(generated, "content: @Composable (MyScreenViewModel, MyScreenNavArgs) -> Unit")
         assertContains(generated, "entry<MyScreenNavArgs>(metadata = { extraMetadata })")
         assertContains(generated, "hiltViewModel<MyScreenViewModelHilt, MyScreenViewModelHilt.Factory>")
-        assertContains(generated, "creationCallback = { it.create(navArgs) }")
+        assertContains(generated, "creationCallback = { it.create(navArgs) }), navArgs)")
+
+        // VM-only overload — content receives just (vm); delegates via 2-arg lambda.
+        assertContains(generated, "content: @Composable (MyScreenViewModel) -> Unit")
+        assertContains(generated, "myScreenEntry(extraMetadata) { vm, _ -> content(vm) }")
     }
 
     @Test
@@ -121,7 +126,7 @@ class HiltNavViewModelProcessorTest {
             package com.example
 
             import androidx.navigation3.runtime.NavKey
-            import dagger.assisted.Assisted
+            import com.stavfx.nav3hiltvm.annotations.NavArg
             import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
 
             data class QualifiedNavArgs(val id: String) : NavKey
@@ -134,7 +139,7 @@ class HiltNavViewModelProcessorTest {
             @HiltNavKeyViewModel
             open class QualifiedViewModel(
                 @MyQualifier private val dep: SomeDep,
-                @Assisted private val args: QualifiedNavArgs,
+                @NavArg private val args: QualifiedNavArgs,
             )
             """.trimIndent()
         )
@@ -144,18 +149,18 @@ class HiltNavViewModelProcessorTest {
     }
 
     @Test
-    fun `errors when @Assisted param is not a NavKey subtype`() {
+    fun `errors when @NavArg param is not a NavKey subtype`() {
         val bad = SourceFile.kotlin(
             "NonNavKeyViewModel.kt",
             """
             package com.example
 
-            import dagger.assisted.Assisted
+            import com.stavfx.nav3hiltvm.annotations.NavArg
             import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
 
             @HiltNavKeyViewModel
             open class NonNavKeyViewModel(
-                @Assisted private val notAKey: String,
+                @NavArg private val notAKey: String,
             )
             """.trimIndent()
         )
@@ -164,7 +169,7 @@ class HiltNavViewModelProcessorTest {
     }
 
     @Test
-    fun `errors when zero @Assisted parameters`() {
+    fun `errors when zero @NavArg parameters`() {
         val bad = SourceFile.kotlin(
             "ZeroAssistedViewModel.kt",
             """
@@ -180,18 +185,18 @@ class HiltNavViewModelProcessorTest {
             """.trimIndent()
         )
         val result = compile(bad)
-        assertCompilationError(result, "requires exactly one @Assisted parameter; found 0")
+        assertCompilationError(result, "requires exactly one @NavArg parameter; found 0")
     }
 
     @Test
-    fun `errors when multiple @Assisted parameters`() {
+    fun `errors when multiple @NavArg parameters`() {
         val bad = SourceFile.kotlin(
             "TwoAssistedViewModel.kt",
             """
             package com.example
 
             import androidx.navigation3.runtime.NavKey
-            import dagger.assisted.Assisted
+            import com.stavfx.nav3hiltvm.annotations.NavArg
             import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
 
             data class ArgsA(val id: String) : NavKey
@@ -199,13 +204,13 @@ class HiltNavViewModelProcessorTest {
 
             @HiltNavKeyViewModel
             open class TwoAssistedViewModel(
-                @Assisted private val a: ArgsA,
-                @Assisted private val b: ArgsB,
+                @NavArg private val a: ArgsA,
+                @NavArg private val b: ArgsB,
             )
             """.trimIndent()
         )
         val result = compile(bad)
-        assertCompilationError(result, "requires exactly one @Assisted parameter; found 2")
+        assertCompilationError(result, "requires exactly one @NavArg parameter; found 2")
     }
 
     @Test
@@ -219,14 +224,14 @@ class HiltNavViewModelProcessorTest {
             package com.example
 
             import androidx.navigation3.runtime.NavKey
-            import dagger.assisted.Assisted
+            import com.stavfx.nav3hiltvm.annotations.NavArg
             import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
 
             data class FakeArgs(val id: String) : NavKey
 
             @HiltNavKeyViewModel
             class FinalViewModel(
-                @Assisted private val args: FakeArgs,
+                @NavArg private val args: FakeArgs,
             )
             """.trimIndent()
         )
@@ -245,14 +250,14 @@ class HiltNavViewModelProcessorTest {
             package com.example
 
             import androidx.navigation3.runtime.NavKey
-            import dagger.assisted.Assisted
+            import com.stavfx.nav3hiltvm.annotations.NavArg
             import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
 
             data class FakeArgs(val id: String) : NavKey
 
             @HiltNavKeyViewModel
             open class MultiCtorViewModel(
-                @Assisted private val args: FakeArgs,
+                @NavArg private val args: FakeArgs,
             ) {
                 constructor(other: String, args: FakeArgs) : this(args)
             }
@@ -282,7 +287,7 @@ class HiltNavViewModelProcessorTest {
             package com.example
 
             import androidx.navigation3.runtime.NavKey
-            import dagger.assisted.Assisted
+            import com.stavfx.nav3hiltvm.annotations.NavArg
             import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
 
             data class $keyClass(val id: String) : NavKey
@@ -292,7 +297,7 @@ class HiltNavViewModelProcessorTest {
             @HiltNavKeyViewModel
             open class $className(
                 private val dep: SomeDep,
-                @Assisted private val $keyParamName: $keyClass,
+                @NavArg private val $keyParamName: $keyClass,
             )
             """.trimIndent()
         )

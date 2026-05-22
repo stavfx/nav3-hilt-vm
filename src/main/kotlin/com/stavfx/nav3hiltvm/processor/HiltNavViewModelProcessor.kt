@@ -100,20 +100,20 @@ class HiltNavViewModelProcessor(
             return
         }
 
-        val assistedParams = primaryCtor.parameters.filter { it.isAssisted() }
-        if (assistedParams.size != 1) {
+        val navArgParams = primaryCtor.parameters.filter { it.isNavArg() }
+        if (navArgParams.size != 1) {
             logger.error(
-                "@HiltNavKeyViewModel requires exactly one @Assisted parameter; " +
-                    "found ${assistedParams.size}",
+                "@HiltNavKeyViewModel requires exactly one @NavArg parameter; " +
+                    "found ${navArgParams.size}",
                 vmClass,
             )
             return
         }
-        val navKeyParam = assistedParams.single()
+        val navKeyParam = navArgParams.single()
         val navKeyParamType = navKeyParam.type.resolve()
         if (!navKeyType.isAssignableFrom(navKeyParamType)) {
             logger.error(
-                "@HiltNavKeyViewModel's @Assisted parameter must be a subtype of " +
+                "@HiltNavKeyViewModel's @NavArg parameter must be a subtype of " +
                     "androidx.navigation3.runtime.NavKey; got " +
                     (navKeyParamType.declaration.qualifiedName?.asString() ?: "<unknown>"),
                 navKeyParam,
@@ -125,5 +125,5 @@ class HiltNavViewModelProcessor(
     }
 }
 
-private fun KSValueParameter.isAssisted(): Boolean =
-    annotations.any { it.shortName.asString() == "Assisted" }
+private fun KSValueParameter.isNavArg(): Boolean =
+    annotations.any { it.shortName.asString() == "NavArg" }
