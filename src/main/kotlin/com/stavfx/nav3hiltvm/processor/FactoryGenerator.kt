@@ -42,18 +42,22 @@ import com.squareup.kotlinpoet.ksp.writeTo
 
 /**
  * Emits the generated `<VMName>_Nav.kt` file containing:
- *  - `<VMName>Hilt` subclass with `@HiltViewModel(assistedFactory = …)` + `@AssistedInject`
- *    constructor mirroring the user's primary ctor, forwarding via `super(...)`. Nested
- *    `@AssistedFactory` interface.
- *  - `<vmStrippedName>Entry` — extension on `EntryProviderScope<NavKey>` that resolves the
- *    subclass through `hiltViewModel` and hands it to the user's `content` lambda as the base
- *    type.
+ *  - `<VMName>_HiltNavArgs` subclass with `@HiltViewModel(assistedFactory = …)` +
+ *    `@AssistedInject` constructor mirroring the user's primary ctor, forwarding via
+ *    `super(...)`. Nested `@AssistedFactory` interface named `Factory`.
+ *  - Two `<vmStrippedName>Entry` extensions on `EntryProviderScope<NavKey>`, both taking an
+ *    `extraMetadata: Map<String, Any> = emptyMap()` that is forwarded to the underlying
+ *    `entry` call. The canonical overload resolves the subclass via `hiltViewModel` and hands
+ *    `(vm, navKey)` to the user's `content` lambda (as the base VM type). The convenience
+ *    overload takes a `(vm)`-only `content` and delegates to the canonical one.
  *
- * Constructor parameter handling: `@Assisted` is preserved on the nav key param; all other
- * annotations on each parameter (Hilt qualifiers like `@ApplicationContext`, `@Named`, etc.) are
- * copied through so Hilt knows how to resolve each dep. The `private val` / `val` modifiers on
- * the user's ctor params are intentionally dropped — those declare properties on the base class,
- * which we don't need on the subclass (it just forwards).
+ * Constructor parameter handling: the user's `@NavArg` marker is dropped and replaced with
+ * Dagger's real `@Assisted` on the nav key param of the generated subclass (so its
+ * `@AssistedInject` ctor is well-formed). All other annotations on each parameter (Hilt
+ * qualifiers like `@ApplicationContext`, `@Named`, etc.) are copied through so Hilt knows how
+ * to resolve each dep. The `private val` / `val` modifiers on the user's ctor params are
+ * intentionally dropped — those declare properties on the base class, which we don't need on
+ * the subclass (it just forwards).
  */
 class FactoryGenerator(
     private val codeGenerator: CodeGenerator,
@@ -66,7 +70,7 @@ class FactoryGenerator(
     ) {
         val packageName = vmClass.packageName.asString()
         val vmName = vmClass.simpleName.asString()
-        val hiltSubName = "${vmName}Hilt"
+        val hiltSubName = "${vmName}_HiltNavArgs"
         // Strip `ViewModel` suffix and lowercase the first letter, then append `Entry`.
         // MyScreenViewModel → myScreenEntry
         val entryName = vmName.removeSuffix("ViewModel")

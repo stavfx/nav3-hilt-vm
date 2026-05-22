@@ -82,7 +82,7 @@ All other constructor parameters are treated as Hilt-injected dependencies. Para
 
 For an annotated `MyScreenViewModel`, the processor emits a sibling file `MyScreenViewModel_Nav.kt` containing:
 
-- **`MyScreenViewModelHilt`** — a subclass annotated `@HiltViewModel(assistedFactory = …)` with an `@AssistedInject` constructor that mirrors yours and forwards via `super(...)`. The nested `Factory` interface lives here. (Hilt's `@AssistedInject` and `@Assisted` only appear in this generated file — you never write them yourself.)
+- **`MyScreenViewModel_HiltNavArgs`** — a subclass annotated `@HiltViewModel(assistedFactory = …)` with an `@AssistedInject` constructor that mirrors yours and forwards via `super(...)`. The nested `Factory` interface lives here. (Hilt's `@AssistedInject` and `@Assisted` only appear in this generated file — you never write them yourself.)
 - **`myScreenEntry`** — two `EntryProviderScope<NavKey>` overloads (one with `content: (vm) -> Unit`, one with `content: (vm, navKey) -> Unit`). Both resolve the subclass through `hiltViewModel` and hand it to your content lambda as the **base type** (`MyScreenViewModel`). Call sites stay agnostic of the generated subclass.
 
 ## Compatibility

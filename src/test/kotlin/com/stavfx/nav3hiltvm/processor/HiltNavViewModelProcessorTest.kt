@@ -69,9 +69,9 @@ class HiltNavViewModelProcessorTest {
         // The Hilt subclass — annotation, super call, factory, all in the same generated file.
         assertContains(
             generated,
-            "@HiltViewModel(assistedFactory = MyScreenViewModelHilt.Factory::class)",
+            "@HiltViewModel(assistedFactory = MyScreenViewModel_HiltNavArgs.Factory::class)",
         )
-        assertContains(generated, "class MyScreenViewModelHilt @AssistedInject constructor(")
+        assertContains(generated, "class MyScreenViewModel_HiltNavArgs @AssistedInject constructor(")
         assertContains(generated, "store: MyStore,")
         // The @Assisted param: annotation lands on its own indented line above the param name.
         assertContains(generated, "@Assisted")
@@ -81,7 +81,7 @@ class HiltNavViewModelProcessorTest {
         assertContains(generated, "public interface Factory {")
         assertContains(
             generated,
-            "public fun create(navArgs: MyScreenNavArgs): MyScreenViewModelHilt",
+            "public fun create(navArgs: MyScreenNavArgs): MyScreenViewModel_HiltNavArgs",
         )
 
         // The entry helper exposes the BASE type to the content lambda, but resolves the SUBCLASS
@@ -90,7 +90,7 @@ class HiltNavViewModelProcessorTest {
         // Full overload — content receives (vm, navKey).
         assertContains(generated, "content: @Composable (MyScreenViewModel, MyScreenNavArgs) -> Unit")
         assertContains(generated, "entry<MyScreenNavArgs>(metadata = { extraMetadata })")
-        assertContains(generated, "hiltViewModel<MyScreenViewModelHilt, MyScreenViewModelHilt.Factory>")
+        assertContains(generated, "hiltViewModel<MyScreenViewModel_HiltNavArgs, MyScreenViewModel_HiltNavArgs.Factory>")
         assertContains(generated, "creationCallback = { it.create(navArgs) }), navArgs)")
 
         // VM-only overload — content receives just (vm); delegates via 2-arg lambda.

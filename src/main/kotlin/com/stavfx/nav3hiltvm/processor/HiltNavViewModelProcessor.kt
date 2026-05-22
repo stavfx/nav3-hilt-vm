@@ -30,12 +30,13 @@ import com.google.devtools.ksp.symbol.Modifier
  * KSP processor for `@HiltNavKeyViewModel`.
  *
  * For each annotated class, emits a single `<ClassName>_Nav.kt` containing:
- *  - `<ClassName>Hilt` — a subclass annotated `@HiltViewModel(assistedFactory = …)` with an
- *    `@AssistedInject` constructor that mirrors the user's primary ctor and forwards via
+ *  - `<ClassName>_HiltNavArgs` — a subclass annotated `@HiltViewModel(assistedFactory = …)` with
+ *    an `@AssistedInject` constructor that mirrors the user's primary ctor and forwards via
  *    `super(...)`. Contains the nested `Factory` interface.
- *  - `<className>Entry` — an `EntryProviderScope<NavKey>` extension that resolves the subclass
- *    through `hiltViewModel<…>(creationCallback = …)` and hands it to the user's content lambda
- *    as the **base** type.
+ *  - `<className>Entry` — two `EntryProviderScope<NavKey>` extension overloads (one with
+ *    `content: (vm) -> Unit`, one with `content: (vm, navKey) -> Unit`) that resolve the
+ *    subclass through `hiltViewModel<…>(creationCallback = …)` and hand it to the user's content
+ *    lambda as the **base** type.
  *
  * Because the `@HiltViewModel(assistedFactory = X::class)` annotation and `X` (the Factory) are
  * both in the same generated file, Hilt's processor sees a fully-resolved reference on round 1.
