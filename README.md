@@ -76,8 +76,8 @@ plugins {
 }
 
 dependencies {
-    implementation("com.stavfx:nav3-hilt-vm:0.2.0")
-    ksp("com.stavfx:nav3-hilt-vm:0.2.0")
+    implementation("com.stavfx:nav3-hilt-vm:0.3.0")
+    ksp("com.stavfx:nav3-hilt-vm:0.3.0")
 }
 ```
 

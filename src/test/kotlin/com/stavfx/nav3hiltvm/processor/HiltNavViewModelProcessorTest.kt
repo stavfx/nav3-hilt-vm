@@ -89,13 +89,13 @@ class HiltNavViewModelProcessorTest {
         assertContains(generated, "EntryProviderScope<NavKey>.myScreenEntry")
         // Full overload — content receives (vm, navKey).
         assertContains(generated, "content: @Composable (MyScreenViewModel, MyScreenNavArgs) -> Unit")
-        assertContains(generated, "entry<MyScreenNavArgs>(metadata = { extraMetadata })")
+        assertContains(generated, "entry<MyScreenNavArgs>(metadata = { metadata })")
         assertContains(generated, "hiltViewModel<MyScreenViewModel_HiltNavArgs, MyScreenViewModel_HiltNavArgs.Factory>")
         assertContains(generated, "creationCallback = { it.create(navArgs) }), navArgs)")
 
         // VM-only overload — content receives just (vm); delegates via 2-arg lambda.
         assertContains(generated, "content: @Composable (MyScreenViewModel) -> Unit")
-        assertContains(generated, "myScreenEntry(extraMetadata) { vm, _ -> content(vm) }")
+        assertContains(generated, "myScreenEntry(metadata) { vm, _ -> content(vm) }")
     }
 
     @Test

@@ -56,9 +56,9 @@ package com.stavfx.nav3hiltvm.annotations
  * }
  *
  * fun EntryProviderScope<NavKey>.myScreenEntry(
- *     extraMetadata: Map<String, Any> = emptyMap(),
+ *     metadata: Map<String, Any> = emptyMap(),
  *     content: @Composable (MyScreenViewModel) -> Unit,
- * ) = entry<MyScreenNavArgs>(metadata = { extraMetadata }) { navArgs ->
+ * ) = entry<MyScreenNavArgs>(metadata = { metadata }) { navArgs ->
  *     content(hiltViewModel<MyScreenViewModel_HiltNavArgs, MyScreenViewModel_HiltNavArgs.Factory>(
  *         creationCallback = { it.create(navArgs) },
  *     ))

@@ -48,7 +48,7 @@ import com.squareup.kotlinpoet.ksp.writeTo
  *    `@AssistedInject` constructor mirroring the user's primary ctor, forwarding via
  *    `super(...)`. Nested `@AssistedFactory` interface named `Factory`.
  *  - Two `<vmStrippedName>Entry` extensions on `EntryProviderScope<NavKey>`, both taking an
- *    `extraMetadata: Map<String, Any> = emptyMap()` that is forwarded to the underlying
+ *    `metadata: Map<String, Any> = emptyMap()` that is forwarded to the underlying
  *    `entry` call. The canonical overload resolves the subclass via `hiltViewModel` and hands
  *    `(vm, navKey)` to the user's `content` lambda (as the base VM type). The convenience
  *    overload takes a `(vm)`-only `content` and delegates to the canonical one.
@@ -152,7 +152,7 @@ class FactoryGenerator(
         val contentVmOnly = composableLambda(
             arrayOf(ParameterSpec.unnamed(vmTypeName))
         )
-        val extraMetadataParam = ParameterSpec.builder("extraMetadata", MAP.parameterizedBy(STRING, ANY))
+        val metadataParam = ParameterSpec.builder("metadata", MAP.parameterizedBy(STRING, ANY))
             .defaultValue("emptyMap()")
             .build()
 
@@ -161,11 +161,11 @@ class FactoryGenerator(
         val entryFnFull = FunSpec.builder(entryName)
             .addModifiers(visibility)
             .receiver(EntryProviderScope.parameterizedBy(NavKey))
-            .addParameter(extraMetadataParam)
+            .addParameter(metadataParam)
             .addParameter(ParameterSpec.builder("content", contentWithKey).build())
             // `entry` is a member of EntryProviderScope (this fn's receiver), so just call it.
             .addStatement(
-                "entry<%T>(metadata = { extraMetadata }) { %L ->",
+                "entry<%T>(metadata = { metadata }) { %L ->",
                 keyTypeName, keyParamName,
             )
             .addStatement(
@@ -181,9 +181,9 @@ class FactoryGenerator(
         val entryFnVmOnly = FunSpec.builder(entryName)
             .addModifiers(visibility)
             .receiver(EntryProviderScope.parameterizedBy(NavKey))
-            .addParameter(extraMetadataParam)
+            .addParameter(metadataParam)
             .addParameter(ParameterSpec.builder("content", contentVmOnly).build())
-            .addStatement("$entryName(extraMetadata) { vm, _ -> content(vm) }")
+            .addStatement("$entryName(metadata) { vm, _ -> content(vm) }")
             .build()
 
         val containingFile = vmClass.containingFile ?: run {
