@@ -2,7 +2,10 @@
 
 KSP processor that wires Hilt ViewModels into Navigation 3 entries with two annotations and one line per screen.
 
-The [official Hilt + Navigation 3 + assisted-injection recipe][recipe] requires four moving parts per screen: a `@HiltViewModel(assistedFactory = …)` annotation, an `@AssistedInject` constructor, a nested `@AssistedFactory` interface, and a verbose `hiltViewModel<VM, Factory>(creationCallback = …)` block in your entry provider. This library replaces all of that with `@HiltNavKeyViewModel` on a plain VM class plus `@NavArg` on the route parameter.
+The [official Hilt + Navigation 3 + assisted-injection recipe][recipe] requires four moving parts per screen: a `@HiltViewModel(assistedFactory = …)` annotation, an `@AssistedInject` constructor, a nested `@AssistedFactory` interface, and a verbose `hiltViewModel<VM, Factory>(creationCallback = …)` block in your entry provider.  
+This library replaces all of that with `@HiltNavArgViewModel` on a plain VM class plus `@NavArg` on the route parameter.
+
+> **Why "NavArg"?** The terminology is deliberately "NavArg" rather than "NavKey" to avoid ambiguity with Jetpack Navigation 3's own `androidx.navigation3.runtime.NavKey` type — the marked parameter's value still implements that type.
 
 ## Before
 
@@ -37,10 +40,10 @@ NavDisplay(
 
 ## After
 
-Apply `@HiltNavKeyViewModel` to a plain `open` class, mark the route param with `@NavArg`, drop the rest:
+Apply `@HiltNavArgViewModel` to a plain `open` class, mark the route param with `@NavArg`, drop the rest:
 
 ```kotlin
-@HiltNavKeyViewModel
+@HiltNavArgViewModel
 open class MyScreenViewModel(
     private val store: MyStore,
     @NavArg private val navArgs: MyScreenNavArgs,
@@ -78,7 +81,7 @@ dependencies {
 }
 ```
 
-`implementation` exposes the `@HiltNavKeyViewModel` / `@NavArg` annotations; `ksp` runs the processor at build time. Same artifact for both.
+`implementation` exposes the `@HiltNavArgViewModel` / `@NavArg` annotations; `ksp` runs the processor at build time. Same artifact for both.
 
 The library assumes your consumer module already has the standard Hilt + Navigation 3 + Compose stack — it just generates the glue between them.
 

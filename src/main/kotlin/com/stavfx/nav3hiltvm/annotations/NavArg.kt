@@ -16,12 +16,15 @@
 package com.stavfx.nav3hiltvm.annotations
 
 /**
- * Marks the constructor parameter that carries the route's `NavKey` — the runtime value provided
- * by the Navigation 3 entry rather than by Hilt's DI graph.
+ * Marks the constructor parameter that carries the route's navigation args — the runtime value
+ * provided by the Navigation 3 entry rather than by Hilt's DI graph.
  *
- * Use exactly once per `@HiltNavKeyViewModel` class, on a parameter whose type implements
+ * Use exactly once per `@HiltNavArgViewModel` class, on a parameter whose type implements
  * `androidx.navigation3.runtime.NavKey`. All other constructor parameters are treated as
  * Hilt-injected.
+ *
+ * The "NavArg" name is deliberate: it avoids ambiguity with Jetpack Navigation 3's own
+ * `androidx.navigation3.runtime.NavKey` type, which this parameter's value implements.
  *
  * Why not `dagger.assisted.Assisted` directly? Dagger's KSP processor errors out when it sees
  * `@Assisted` on a constructor that isn't itself `@AssistedInject`. The user's class is plain;

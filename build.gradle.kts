@@ -40,7 +40,7 @@ mavenPublishing {
     pom {
         name.set("nav3-hilt-vm")
         description.set(
-            "KSP processor that takes the boilerplate out of Hilt + Navigation 3 " +
+            "KSP processor that takes the boilerplate out of Hilt + Navigation 3 + " +
                 "ViewModels with assisted NavKey injection."
         )
         inceptionYear.set("2026")

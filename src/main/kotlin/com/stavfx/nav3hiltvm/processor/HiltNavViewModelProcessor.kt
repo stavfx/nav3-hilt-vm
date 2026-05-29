@@ -27,7 +27,7 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 
 /**
- * KSP processor for `@HiltNavKeyViewModel`.
+ * KSP processor for `@HiltNavArgViewModel`.
  *
  * For each annotated class, emits a single `<ClassName>_Nav.kt` containing:
  *  - `<ClassName>_HiltNavArgs` — a subclass annotated `@HiltViewModel(assistedFactory = …)` with
@@ -61,7 +61,7 @@ class HiltNavViewModelProcessor(
         }
         navKeyType = navKeyDeclaration.asStarProjectedType()
 
-        resolver.getSymbolsWithAnnotation("com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel")
+        resolver.getSymbolsWithAnnotation("com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel")
             .filterIsInstance<KSClassDeclaration>()
             .forEach(::process)
         return emptyList()
@@ -74,7 +74,7 @@ class HiltNavViewModelProcessor(
         // in the user's source. Surface a clear message ourselves first.
         if (Modifier.OPEN !in vmClass.modifiers && Modifier.ABSTRACT !in vmClass.modifiers) {
             logger.error(
-                "@HiltNavKeyViewModel class must be declared `open` (or `abstract`) so the " +
+                "@HiltNavArgViewModel class must be declared `open` (or `abstract`) so the " +
                     "generated Hilt subclass can extend it",
                 vmClass,
             )
@@ -83,7 +83,7 @@ class HiltNavViewModelProcessor(
 
         val primaryCtor = vmClass.primaryConstructor ?: run {
             logger.error(
-                "@HiltNavKeyViewModel requires a primary constructor",
+                "@HiltNavArgViewModel requires a primary constructor",
                 vmClass,
             )
             return
@@ -94,7 +94,7 @@ class HiltNavViewModelProcessor(
         val allCtors = vmClass.getConstructors().toList()
         if (allCtors.size > 1) {
             logger.error(
-                "@HiltNavKeyViewModel classes must declare exactly one constructor; " +
+                "@HiltNavArgViewModel classes must declare exactly one constructor; " +
                     "found ${allCtors.size}",
                 vmClass,
             )
@@ -104,7 +104,7 @@ class HiltNavViewModelProcessor(
         val navArgParams = primaryCtor.parameters.filter { it.isNavArg() }
         if (navArgParams.size != 1) {
             logger.error(
-                "@HiltNavKeyViewModel requires exactly one @NavArg parameter; " +
+                "@HiltNavArgViewModel requires exactly one @NavArg parameter; " +
                     "found ${navArgParams.size}",
                 vmClass,
             )
@@ -114,7 +114,7 @@ class HiltNavViewModelProcessor(
         val navKeyParamType = navKeyParam.type.resolve()
         if (!navKeyType.isAssignableFrom(navKeyParamType)) {
             logger.error(
-                "@HiltNavKeyViewModel's @NavArg parameter must be a subtype of " +
+                "@HiltNavArgViewModel's @NavArg parameter must be a subtype of " +
                     "androidx.navigation3.runtime.NavKey; got " +
                     (navKeyParamType.declaration.qualifiedName?.asString() ?: "<unknown>"),
                 navKeyParam,

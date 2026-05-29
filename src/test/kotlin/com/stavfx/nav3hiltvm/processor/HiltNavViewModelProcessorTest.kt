@@ -49,13 +49,13 @@ class HiltNavViewModelProcessorTest {
 
             import androidx.navigation3.runtime.NavKey
             import com.stavfx.nav3hiltvm.annotations.NavArg
-            import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
 
             data class MyScreenNavArgs(val id: String) : NavKey
 
             interface MyStore
 
-            @HiltNavKeyViewModel
+            @HiltNavArgViewModel
             open class MyScreenViewModel(
                 private val store: MyStore,
                 @NavArg private val navArgs: MyScreenNavArgs,
@@ -127,7 +127,7 @@ class HiltNavViewModelProcessorTest {
 
             import androidx.navigation3.runtime.NavKey
             import com.stavfx.nav3hiltvm.annotations.NavArg
-            import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
 
             data class QualifiedNavArgs(val id: String) : NavKey
 
@@ -136,7 +136,7 @@ class HiltNavViewModelProcessorTest {
 
             interface SomeDep
 
-            @HiltNavKeyViewModel
+            @HiltNavArgViewModel
             open class QualifiedViewModel(
                 @MyQualifier private val dep: SomeDep,
                 @NavArg private val args: QualifiedNavArgs,
@@ -156,9 +156,9 @@ class HiltNavViewModelProcessorTest {
             package com.example
 
             import com.stavfx.nav3hiltvm.annotations.NavArg
-            import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
 
-            @HiltNavKeyViewModel
+            @HiltNavArgViewModel
             open class NonNavKeyViewModel(
                 @NavArg private val notAKey: String,
             )
@@ -176,11 +176,11 @@ class HiltNavViewModelProcessorTest {
             package com.example
 
             import androidx.navigation3.runtime.NavKey
-            import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
 
             interface Dep
 
-            @HiltNavKeyViewModel
+            @HiltNavArgViewModel
             open class ZeroAssistedViewModel(private val dep: Dep)
             """.trimIndent()
         )
@@ -197,12 +197,12 @@ class HiltNavViewModelProcessorTest {
 
             import androidx.navigation3.runtime.NavKey
             import com.stavfx.nav3hiltvm.annotations.NavArg
-            import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
 
             data class ArgsA(val id: String) : NavKey
             data class ArgsB(val id: String) : NavKey
 
-            @HiltNavKeyViewModel
+            @HiltNavArgViewModel
             open class TwoAssistedViewModel(
                 @NavArg private val a: ArgsA,
                 @NavArg private val b: ArgsB,
@@ -225,11 +225,11 @@ class HiltNavViewModelProcessorTest {
 
             import androidx.navigation3.runtime.NavKey
             import com.stavfx.nav3hiltvm.annotations.NavArg
-            import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
 
             data class FakeArgs(val id: String) : NavKey
 
-            @HiltNavKeyViewModel
+            @HiltNavArgViewModel
             class FinalViewModel(
                 @NavArg private val args: FakeArgs,
             )
@@ -251,11 +251,11 @@ class HiltNavViewModelProcessorTest {
 
             import androidx.navigation3.runtime.NavKey
             import com.stavfx.nav3hiltvm.annotations.NavArg
-            import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
 
             data class FakeArgs(val id: String) : NavKey
 
-            @HiltNavKeyViewModel
+            @HiltNavArgViewModel
             open class MultiCtorViewModel(
                 @NavArg private val args: FakeArgs,
             ) {
@@ -288,13 +288,13 @@ class HiltNavViewModelProcessorTest {
 
             import androidx.navigation3.runtime.NavKey
             import com.stavfx.nav3hiltvm.annotations.NavArg
-            import com.stavfx.nav3hiltvm.annotations.HiltNavKeyViewModel
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
 
             data class $keyClass(val id: String) : NavKey
 
             interface SomeDep
 
-            @HiltNavKeyViewModel
+            @HiltNavArgViewModel
             open class $className(
                 private val dep: SomeDep,
                 @NavArg private val $keyParamName: $keyClass,

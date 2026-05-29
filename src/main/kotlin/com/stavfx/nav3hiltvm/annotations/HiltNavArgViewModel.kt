@@ -16,14 +16,17 @@
 package com.stavfx.nav3hiltvm.annotations
 
 /**
- * Marks a `ViewModel` whose primary constructor takes a Navigation 3 `NavKey` (the route args)
- * alongside its Hilt-injected dependencies.
+ * Marks a `ViewModel` whose primary constructor takes a Navigation 3 route-args value (the
+ * `@NavArg` parameter) alongside its Hilt-injected dependencies.
  *
  * The annotated class **must** declare a single primary constructor with exactly one parameter
  * annotated `@NavArg`, and that parameter's type must be a subtype of
  * `androidx.navigation3.runtime.NavKey`. The class itself must be `open` (or made so via the
  * `kotlin-allopen` plugin in the consuming module) — codegen produces a subclass that wires
  * Hilt + assisted injection.
+ *
+ * This library uses "NavArg" terminology (rather than "NavKey") to avoid ambiguity with Jetpack
+ * Navigation 3's own `androidx.navigation3.runtime.NavKey` type.
  *
  * Apply on a plain VM class — do **not** also add `@HiltViewModel`, `@AssistedInject`, or an
  * `@AssistedFactory` interface. The KSP processor generates a sibling `<ClassName>_HiltNavArgs`
@@ -32,7 +35,7 @@ package com.stavfx.nav3hiltvm.annotations
  *
  * Example:
  * ```
- * @HiltNavKeyViewModel
+ * @HiltNavArgViewModel
  * open class MyScreenViewModel(
  *     private val store: MyStore,
  *     @NavArg private val navArgs: MyScreenNavArgs,
@@ -69,4 +72,4 @@ package com.stavfx.nav3hiltvm.annotations
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.BINARY)
-annotation class HiltNavKeyViewModel
+annotation class HiltNavArgViewModel
