@@ -15,12 +15,14 @@
  */
 package com.stavfx.nav3hiltvm.processor
 
+import com.google.devtools.ksp.getVisibility
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSValueParameter
+import com.google.devtools.ksp.symbol.Visibility
 import com.squareup.kotlinpoet.ANY
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
@@ -78,6 +80,11 @@ class FactoryGenerator(
 
         val vmTypeName = vmClass.toClassName()
         val hiltSubTypeName = ClassName(packageName, hiltSubName)
+        // Mirror the user's VM visibility onto everything we generate. A subclass can't be more
+        // visible than the class it extends (e.g. a public subclass of an internal VM won't
+        // compile), and the entry functions expose the base VM type in their signatures, so they
+        // carry the same constraint.
+        val visibility = vmClass.visibilityModifier()
         val factoryTypeName = hiltSubTypeName.nestedClass("Factory")
         val keyTypeName = navKeyParam.type.toTypeName()
         val keyParamName = navKeyParam.name?.asString() ?: "navKey"
@@ -120,6 +127,7 @@ class FactoryGenerator(
             .build()
 
         val hiltSubclass = TypeSpec.classBuilder(hiltSubName)
+            .addModifiers(visibility)
             .addAnnotation(hiltViewModelAnnotation)
             .superclass(vmTypeName)
             .apply { primaryCtor.parameters.forEach { _ -> } } // (kept for symmetry; super call below)
@@ -151,6 +159,7 @@ class FactoryGenerator(
         // Full overload: content receives (vm, navKey). This is the canonical one — does the
         // actual hiltViewModel<…>(creationCallback) work.
         val entryFnFull = FunSpec.builder(entryName)
+            .addModifiers(visibility)
             .receiver(EntryProviderScope.parameterizedBy(NavKey))
             .addParameter(extraMetadataParam)
             .addParameter(ParameterSpec.builder("content", contentWithKey).build())
@@ -170,6 +179,7 @@ class FactoryGenerator(
         // a 2-arg lambda so the resolver picks the canonical one. Useful when the screen doesn't
         // need direct access to the nav key.
         val entryFnVmOnly = FunSpec.builder(entryName)
+            .addModifiers(visibility)
             .receiver(EntryProviderScope.parameterizedBy(NavKey))
             .addParameter(extraMetadataParam)
             .addParameter(ParameterSpec.builder("content", contentVmOnly).build())
@@ -204,4 +214,12 @@ class FactoryGenerator(
         val HiltViewModelMember =
             MemberName("androidx.hilt.lifecycle.viewmodel.compose", "hiltViewModel")
     }
+}
+
+/** Maps the declared Kotlin visibility of a class to the equivalent KotlinPoet modifier. */
+private fun KSClassDeclaration.visibilityModifier(): KModifier = when (getVisibility()) {
+    Visibility.INTERNAL -> KModifier.INTERNAL
+    Visibility.PROTECTED -> KModifier.PROTECTED
+    Visibility.PRIVATE -> KModifier.PRIVATE
+    else -> KModifier.PUBLIC
 }

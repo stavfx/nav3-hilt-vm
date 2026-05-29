@@ -76,8 +76,8 @@ plugins {
 }
 
 dependencies {
-    implementation("com.stavfx:nav3-hilt-vm:0.1.0")
-    ksp("com.stavfx:nav3-hilt-vm:0.1.0")
+    implementation("com.stavfx:nav3-hilt-vm:0.2.0")
+    ksp("com.stavfx:nav3-hilt-vm:0.2.0")
 }
 ```
 
@@ -100,6 +100,8 @@ All other constructor parameters are treated as Hilt-injected dependencies. Para
 For an annotated `MyScreenViewModel`, the processor emits a sibling file `MyScreenViewModel_Nav.kt` containing:
 
 - **`MyScreenViewModel_HiltNavArgs`** — a subclass annotated `@HiltViewModel(assistedFactory = …)` with an `@AssistedInject` constructor that mirrors yours and forwards via `super(...)`. The nested `Factory` interface lives here. (Hilt's `@AssistedInject` and `@Assisted` only appear in this generated file — you never write them yourself.)
+
+The generated subclass and entry functions mirror the visibility of your ViewModel — mark it `internal` and the generated code is `internal` too.
 - **`myScreenEntry`** — two `EntryProviderScope<NavKey>` overloads (one with `content: (vm) -> Unit`, one with `content: (vm, navKey) -> Unit`). Both resolve the subclass through `hiltViewModel` and hand it to your content lambda as the **base type** (`MyScreenViewModel`). Call sites stay agnostic of the generated subclass.
 
 ## Compatibility

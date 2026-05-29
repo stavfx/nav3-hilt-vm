@@ -99,6 +99,31 @@ class HiltNavViewModelProcessorTest {
     }
 
     @Test
+    fun `generated subclass and entries mirror an internal VM's visibility`() {
+        val vm = SourceFile.kotlin(
+            "SecretViewModel.kt",
+            """
+            package com.example
+
+            import androidx.navigation3.runtime.NavKey
+            import com.stavfx.nav3hiltvm.annotations.NavArg
+            import com.stavfx.nav3hiltvm.annotations.HiltNavArgViewModel
+
+            data class SecretNavArgs(val id: String) : NavKey
+
+            @HiltNavArgViewModel
+            internal open class SecretViewModel(
+                @NavArg private val navArgs: SecretNavArgs,
+            )
+            """.trimIndent()
+        )
+        val result = compile(vm)
+        val generated = result.findGenerated("SecretViewModel_Nav.kt")
+        assertContains(generated, "internal class SecretViewModel_HiltNavArgs")
+        assertContains(generated, "internal fun EntryProviderScope<NavKey>.secretEntry")
+    }
+
+    @Test
     fun `entry name strips ViewModel suffix and lowercases first letter`() {
         // MyViewModel → myEntry
         val my = vm("MyViewModel", keyClass = "MyNavArgs", keyParamName = "args")
